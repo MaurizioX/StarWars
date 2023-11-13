@@ -1,0 +1,44 @@
+name: Android CI
+
+on: pull_request
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: 17
+    - name: Build with Gradle
+      run: ./gradlew assembleDebug
+    - name: Build iOS shared code
+      run: ./gradlew :shared:compileKotlinIosArm64
+    - name: Tests
+      run:  ./gradlew allTests
+    - name: Build server
+      run: ./gradlew :server:assemble
+
+
+  androidTest:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: 17
+
+      - name: Android Instrumentation Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: google_apis
+          script: ./gradlew androidApp:connectedAndroidTest
